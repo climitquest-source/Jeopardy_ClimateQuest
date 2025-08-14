@@ -1,0 +1,161 @@
+{
+  "packName": "Climate Pack 1",
+  "categories": [
+    {
+      "title": "Energy",
+      "clues": [
+        {
+          "q": "This home upgrade reduces heating and cooling needs the most.",
+          "answer": "Insulation",
+          "explain": "Stopping heat loss/gain cuts energy demand at the source."
+        },
+        {
+          "q": "LEDs save energy mainly because they waste less of this as heat.",
+          "answer": "Electricity as heat",
+          "explain": "LEDs convert more electricity into light instead of heat."
+        },
+        {
+          "q": "This appliance often uses the most electricity because it runs 24/7.",
+          "answer": "Refrigerator",
+          "explain": "Constant runtime beats small loads over time."
+        },
+        {
+          "q": "Peak hours electricity is often dirtier. Shifting use is called this.",
+          "answer": "Load shifting",
+          "explain": "Using energy off-peak can lower grid emissions and cost."
+        },
+        {
+          "q": "Home air leaks are found with this simple test using a fan.",
+          "answer": "Blower door test",
+          "explain": "It depressurizes the home to reveal leaks."
+        }
+      ]
+    },
+    {
+      "title": "Food",
+      "clues": [
+        {
+          "q": "Meals built around these protein-rich plants have a low footprint.",
+          "answer": "Beans/legumes",
+          "explain": "Plant proteins have much lower emissions than beef."
+        },
+        {
+          "q": "Replacing beef with this poultry often cuts meal emissions by ~50–80%.",
+          "answer": "Chicken",
+          "explain": "Ruminant methane is the big difference."
+        },
+        {
+          "q": "Keeping food here (not the warmest shelf) reduces spoilage waste.",
+          "answer": "Fridge (proper zones)",
+          "explain": "Cooler zones preserve food longer, reducing waste."
+        },
+        {
+          "q": "This label date is about best quality, not safety, and leads to waste.",
+          "answer": "'Best before'",
+          "explain": "Use your senses; many foods are safe after the date."
+        },
+        {
+          "q": "Composting returns nutrients to soils and cuts this landfill gas.",
+          "answer": "Methane",
+          "explain": "Anaerobic decomposition in landfills emits methane."
+        }
+      ]
+    },
+    {
+      "title": "Transport",
+      "clues": [
+        {
+          "q": "Replacing a short car trip with this human-powered mode saves most.",
+          "answer": "Biking/walking",
+          "explain": "Short trips have high cold-start emissions."
+        },
+        {
+          "q": "Driving style with gentle acceleration is called this.",
+          "answer": "Eco-driving",
+          "explain": "Smoother speed saves fuel."
+        },
+        {
+          "q": "Combining errands into one loop is called this.",
+          "answer": "Trip chaining",
+          "explain": "It reduces cold starts and distance."
+        },
+        {
+          "q": "Public transport emissions per person are lower due to this effect.",
+          "answer": "Sharing/occupancy",
+          "explain": "More riders spread fixed emissions."
+        },
+        {
+          "q": "Keeping tires at this level improves efficiency and safety.",
+          "answer": "Proper pressure",
+          "explain": "Reduces rolling resistance and wear."
+        }
+      ]
+    },
+    {
+      "title": "Waste & Recycling",
+      "clues": [
+        {
+          "q": "This thin plastic type is often not accepted curbside.",
+          "answer": "Plastic film/bags",
+          "explain": "Needs special drop-off; tangles sorting machines."
+        },
+        {
+          "q": "Using a reusable water bottle prevents this upstream impact.",
+          "answer": "New plastic production",
+          "explain": "Prevents extraction and manufacturing emissions."
+        },
+        {
+          "q": "This metal is a recycling champion—saves ~95% energy vs. new.",
+          "answer": "Aluminum",
+          "explain": "Recycling aluminum is very energy efficient."
+        },
+        {
+          "q": "Placing items in the wrong bin is called this.",
+          "answer": "Contamination",
+          "explain": "It can spoil loads and increase costs."
+        },
+        {
+          "q": "Fixing items instead of replacing them is called this movement.",
+          "answer": "Right to repair",
+          "explain": "Extends product lifespans and cuts waste."
+        }
+      ]
+    },
+    {
+      "title": "Water",
+      "clues": [
+        {
+          "q": "Shorter ones of these save hot water and energy.",
+          "answer": "Showers",
+          "explain": "Less time = less water heated."
+        },
+        {
+          "q": "This fixture’s leaks can waste hundreds of liters per week.",
+          "answer": "Toilet",
+          "explain": "Silent leaks add up quickly."
+        },
+        {
+          "q": "Native or drought-tolerant plants reduce this outdoor demand.",
+          "answer": "Irrigation/watering",
+          "explain": "Landscaping choices matter in dry regions."
+        },
+        {
+          "q": "Collecting this from roofs for gardens is called this.",
+          "answer": "Rainwater harvesting",
+          "explain": "Reduces tap water use and runoff."
+        },
+        {
+          "q": "Efficient washers and these showerheads cut water and energy.",
+          "answer": "Low-flow",
+          "explain": "Less water to heat and pump."
+        }
+      ]
+    }
+  ],
+  "final": {
+    "category": "Climate Justice",
+    "clue": "This term describes ensuring climate benefits and burdens are shared fairly, with special care for vulnerable communities.",
+    "answer": "Climate justice",
+    "explain": "Fair treatment and meaningful involvement of all people in climate solutions."
+  }
+}

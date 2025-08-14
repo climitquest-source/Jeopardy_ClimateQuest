@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Climate Quest — Jeopardy</title>
+  <meta name="description" content="Host a climate Jeopardy game for classrooms and events." />
+  <meta property="og:title" content="Climate Quest — Jeopardy" />
+  <meta property="og:description" content="Host a climate Jeopardy game for classrooms and events." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="assets/og-image.png" />
+  <meta name="theme-color" content="#0ea5e9" />
+  <link rel="icon" href="assets/icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <img src="assets/icon.png" alt="Leaf icon" class="logo" />
+      <h1>Climate Quest <span class="tag">Jeopardy</span></h1>
+    </div>
+    <nav>
+      <button id="btn-help" class="ghost">Help</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- SETUP -->
+    <section id="screen-setup" class="screen active">
+      <div class="card">
+        <h2>Game setup</h2>
+        <div class="grid-2">
+          <div>
+            <label for="packSelect">Question pack</label>
+            <select id="packSelect">
+              <option value="packs/climate_pack_1.json">Climate Pack 1</option>
+            </select>
+          </div>
+          <div>
+            <label for="roundType">Round</label>
+            <select id="roundType">
+              <option value="single">Single (100–500)</option>
+              <option value="double">Double (200–1000)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="team-box">
+          <h3>Teams</h3>
+          <div class="teams">
+            <div class="team"><label>Team 1 <small>(key: A)</small></label><input id="t1" placeholder="Team 1" /></div>
+            <div class="team"><label>Team 2 <small>(key: L)</small></label><input id="t2" placeholder="Team 2" /></div>
+            <div class="team"><label>Team 3 <small>(key: W)</small></label><input id="t3" placeholder="Team 3" /></div>
+            <div class="team"><label>Team 4 <small>(key: P)</small></label><input id="t4" placeholder="Team 4" /></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <label><input type="checkbox" id="enableFinal" checked /> Include Final Question</label>
+        </div>
+
+        <div class="cta">
+          <button id="btn-start" class="primary">Start game</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- BOARD -->
+    <section id="screen-board" class="screen">
+      <div class="scorebar card">
+        <div class="scores" id="scorebar"></div>
+      </div>
+      <div class="board card" id="board"></div>
+      <div class="cta">
+        <button id="btn-to-final" class="ghost" style="display:none">Go to Final</button>
+        <button id="btn-restart" class="ghost">Restart</button>
+      </div>
+    </section>
+
+    <!-- CLUE MODAL -->
+    <dialog id="clueDialog">
+      <div class="clue-wrap">
+        <div class="clue-header">
+          <h3 id="clueCategory">Category</h3>
+          <div class="clue-meta">
+            <span id="clueValue">$100</span>
+            <span id="clueFlags"></span>
+          </div>
+        </div>
+        <div id="clueText" class="clue-text"></div>
+
+        <div class="buzzer-box">
+          <div class="buzzer-status" id="buzzerStatus">Buzzers locked</div>
+          <div class="buzzer-keys">
+            <button class="buzzer" data-team="0">Team 1 (A)</button>
+            <button class="buzzer" data-team="1">Team 2 (L)</button>
+            <button class="buzzer" data-team="2">Team 3 (W)</button>
+            <button class="buzzer" data-team="3">Team 4 (P)</button>
+          </div>
+        </div>
+
+        <div class="cta">
+          <button id="btn-open-buzzers" class="primary">Open buzzers</button>
+          <button id="btn-lock-buzzers" class="ghost">Lock</button>
+          <button id="btn-correct" class="good" disabled>Correct</button>
+          <button id="btn-wrong" class="bad" disabled>Wrong</button>
+          <button id="btn-pass" class="ghost">Pass</button>
+          <button id="btn-close-clue" class="ghost">Close</button>
+        </div>
+
+        <div id="clueExplain" class="note"></div>
+      </div>
+    </dialog>
+
+    <!-- DAILY DOUBLE DIALOG -->
+    <dialog id="ddDialog">
+      <h3>Daily Double!</h3>
+      <p id="ddTeamName">Team</p>
+      <p>Wager up to your score or the highest clue value.</p>
+      <input id="ddWager" type="number" min="0" value="100" />
+      <div class="cta">
+        <button id="btn-dd-continue" class="primary">Continue</button>
+      </div>
+    </dialog>
+
+    <!-- FINAL ROUND -->
+    <section id="screen-final" class="screen">
+      <div class="card">
+        <h2>Final Question</h2>
+        <div id="finalCategory" class="final-cat">Category</div>
+        <div class="final-wagers" id="finalWagers"></div>
+        <div class="final-clue" id="finalClue" style="display:none"></div>
+        <div class="final-controls cta">
+          <button id="btn-reveal-final" class="primary">Reveal Final</button>
+          <button id="btn-final-correct" class="good" disabled>Mark Correct</button>
+          <button id="btn-final-wrong" class="bad" disabled>Mark Wrong</button>
+          <button id="btn-finish-game" class="ghost">Finish</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="screen-end" class="screen">
+      <div class="card">
+        <h2>Game Over</h2>
+        <div id="resultsTable" class="table-wrap"></div>
+        <div class="cta">
+          <button id="btn-restart-2" class="primary">Play again</button>
+          <button id="btn-home" class="ghost">Home</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- HELP -->
+    <dialog id="helpDialog">
+      <h3>How to host</h3>
+      <ol>
+        <li>Enter team names (up to 4). Each team has a keyboard buzzer: A, L, W, P. On-screen buttons work too.</li>
+        <li>Click a dollar tile to reveal a clue. Open buzzers when you finish reading.</li>
+        <li>First buzz locks others. Mark Correct/Wrong to score. Pass lets others buzz.</li>
+        <li>Daily Double: only the selecting team answers after a wager.</li>
+        <li>Final Question (optional): enter wagers, reveal, then mark correct/wrong per team.</li>
+      </ol>
+      <p>Tip: connect a laptop to a projector. This is a static app; no accounts, no backend.</p>
+      <div class="cta"><button id="btn-close-help" class="primary">Close</button></div>
+    </dialog>
+  </main>
+
+  <footer class="site-footer">
+    <small>Static app · No tracking</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
