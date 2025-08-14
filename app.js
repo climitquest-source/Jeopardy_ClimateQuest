@@ -1,6 +1,4 @@
-// Climate Quest — Jeopardy
-// Static host tool: one screen + keyboard/on-screen buzzers. No backend.
-
+// Jeopardy host logic (keyboard + phone buzzers)
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 
@@ -57,13 +55,22 @@ const btnFinishGame = $("#btn-finish-game");
 
 const resultsTable = $("#resultsTable");
 
+const fbConfigEl = $("#fbConfig");
+const fbStatus = $("#fbStatus");
+const btnSaveFirebase = $("#btn-save-firebase");
+const btnCreateRoom = $("#btn-create-room");
+const btnCloseRoom = $("#btn-close-room");
+const roomCodeEl = $("#roomCode");
+const qrCanvas = $("#qrCanvas");
+const connectedList = $("#connectedList");
+
 $("#btn-help").addEventListener("click", ()=>dialogs.help.showModal());
-$("#btn-close-help").addEventListener("click", ()=>dialogs.help.close());
+$("#btn-close-help")?.addEventListener("click", ()=>dialogs.help.close());
 
 btnStart.addEventListener("click", startGame);
 btnRestart.addEventListener("click", ()=>location.reload());
-btnRestart2.addEventListener("click", ()=>location.reload());
-btnHome.addEventListener("click", ()=>location.reload());
+btnRestart2?.addEventListener("click", ()=>location.reload());
+btnHome?.addEventListener("click", ()=>location.reload());
 btnToFinal.addEventListener("click", goToFinal);
 
 btnOpenBuzzers.addEventListener("click", openBuzzers);
@@ -74,48 +81,44 @@ btnPass.addEventListener("click", passBuzz);
 btnCloseClue.addEventListener("click", closeClue);
 
 btnDdContinue.addEventListener("click", continueDailyDouble);
-btnRevealFinal.addEventListener("click", revealFinal);
-btnFinalCorrect.addEventListener("click", ()=>gradeFinal(true));
-btnFinalWrong.addEventListener("click", ()=>gradeFinal(false));
-btnFinishGame.addEventListener("click", finishGame);
 
-buzzerButtons.forEach(b => b.addEventListener("click", () => onBuzz(parseInt(b.dataset.team,10))));
+buzzerButtons.forEach(b => b.addEventListener("click", () => onBuzzLocal(parseInt(b.dataset.team,10))));
 
 // Keyboard buzzers
 const KEY_TO_TEAM = { 'a':0, 'l':1, 'w':2, 'p':3 };
 window.addEventListener("keydown", (e) => {
   const k = (e.key || "").toLowerCase();
   if (state.buzzersOpen && KEY_TO_TEAM.hasOwnProperty(k)) {
-    onBuzz(KEY_TO_TEAM[k]);
+    onBuzzLocal(KEY_TO_TEAM[k]);
   }
 });
 
 let PACK = null;
 const state = {
-  round: "single",      // single|double
+  round: "single",
   values: [100,200,300,400,500],
-  categories: [],       // [{title, clues:[{q,a,explain}, ...]}]
-  board: [],            // 5x5 cell objects
-  usedCount: 0,
+  categories: [],
+  board: [],
   dailyDoubleCell: null,
-
   teams: [
     { name:"Team 1", score: 0, active:true },
     { name:"Team 2", score: 0, active:true },
     { name:"Team 3", score: 0, active:true },
     { name:"Team 4", score: 0, active:true },
   ],
-  currentCell: null,    // {catIndex, rowIndex, value, clue}
-  selectingTeam: 0,     // index of team choosing the next tile
+  currentCell: null,
+  selectingTeam: 0,
   buzzersOpen: false,
-  buzzingOrder: [],     // queue of team indices
-  answeredTeams: new Set(),  // to prevent repeat on same clue
+  buzzingOrder: [],
+  answeredTeams: new Set(),
 
-  // Final
   hasFinal: true,
-  final: null,          // {category, clue, answer, explain}
-  finalWagers: {},      // teamIndex -> wager
-  finalIndex: 0,        // whose final is being graded
+  final: null,
+  finalWagers: {},
+  finalIndex: 0,
+
+  // Phones
+  fb: { app:null, db:null, room:null, code:null, pressesRef:null, openRef:null, playersRef:null },
 };
 
 async function startGame() {
@@ -125,7 +128,7 @@ async function startGame() {
 
   state.round = roundType.value;
   state.values = state.round === "double" ? [200,400,600,800,1000] : [100,200,300,400,500];
-  state.hasFinal = $("#enableFinal").checked;
+  state.hasFinal = enableFinal.checked;
 
   // Teams
   tInputs.forEach((inp, i) => {
@@ -135,7 +138,7 @@ async function startGame() {
     state.teams[i].active = !!name;
   });
 
-  // Build board (first 5 categories from pack)
+  // Build board
   state.categories = PACK.categories.slice(0,5);
   state.board = [];
   for (let c=0; c<5; c++) {
@@ -145,19 +148,15 @@ async function startGame() {
       state.board.push({ catIndex:c, rowIndex:r, value: state.values[r], used:false, clue });
     }
   }
-  // Daily Double
   state.dailyDoubleCell = Math.floor(Math.random()*state.board.length);
-
-  // Final
-  if (state.hasFinal) {
-    state.final = PACK.final;
-  }
+  if (state.hasFinal) state.final = PACK.final;
 
   renderScores();
   renderBoard();
   show("board");
 }
 
+// Rendering
 function renderScores() {
   scorebar.innerHTML = "";
   state.teams.forEach((t,i) => {
@@ -171,7 +170,6 @@ function renderScores() {
 
 function renderBoard() {
   boardEl.innerHTML = "";
-  // header row categories
   for (let c=0; c<5; c++) {
     const cat = state.categories[c];
     const el = document.createElement("div");
@@ -179,7 +177,6 @@ function renderBoard() {
     el.textContent = cat.title;
     boardEl.appendChild(el);
   }
-  // 5 rows of tiles
   for (let r=0; r<5; r++) {
     for (let c=0; c<5; c++) {
       const idx = c*5 + r;
@@ -192,7 +189,6 @@ function renderBoard() {
       boardEl.appendChild(tile);
     }
   }
-  // Final button if finished
   const allUsed = state.board.every(c => c.used);
   btnToFinal.style.display = (allUsed && state.hasFinal) ? "inline-block" : "none";
 }
@@ -209,17 +205,13 @@ function openClue(index) {
   clueValue.textContent = `$${cell.value}`;
   clueFlags.textContent = (index === state.dailyDoubleCell) ? "Daily Double" : "";
   clueText.textContent = cell.clue.q;
-  clueExplain.textContent = ""; // hidden until close
+  clueExplain.textContent = "";
   buzzerStatus.textContent = "Buzzers locked";
 
-  // Daily Double flow
   if (index === state.dailyDoubleCell) {
-    // Selecting team is the one whose turn it is; by default, use last correct or 0
     ddTeamName.textContent = state.teams[state.selectingTeam].name;
     const maxWager = Math.max(Math.max(...state.values), Math.abs(state.teams[state.selectingTeam].score));
-    ddWager.min = 0;
-    ddWager.max = maxWager;
-    ddWager.value = Math.min(300, maxWager);
+    ddWager.min = 0; ddWager.max = maxWager; ddWager.value = Math.min(300, maxWager);
     dialogs.dd.showModal();
   } else {
     dialogs.clue.showModal();
@@ -229,7 +221,6 @@ function openClue(index) {
 function continueDailyDouble() {
   dialogs.dd.close();
   dialogs.clue.showModal();
-  // For DD, only selectingTeam can buzz; so we immediately set buzz order to that team
   state.buzzersOpen = true;
   state.buzzingOrder = [state.selectingTeam];
   btnOpenBuzzers.disabled = true;
@@ -237,6 +228,17 @@ function continueDailyDouble() {
   btnCorrect.disabled = false;
   btnWrong.disabled = false;
   buzzerStatus.textContent = `${state.teams[state.selectingTeam].name} to answer (Daily Double)`;
+}
+
+// Buzzing (local keyboard/buttons)
+function onBuzzLocal(teamIndex) {
+  if (!state.buzzersOpen) return;
+  if (!state.teams[teamIndex].active) return;
+  if (state.answeredTeams.has(teamIndex)) return;
+  if (!state.buzzingOrder.length) {
+    state.buzzingOrder.push(teamIndex);
+    lockBuzzers();
+  }
 }
 
 function openBuzzers() {
@@ -247,7 +249,13 @@ function openBuzzers() {
   btnLockBuzzers.disabled = false;
   btnCorrect.disabled = true;
   btnWrong.disabled = true;
-  buzzerStatus.textContent = "Buzzers open… (A, L, W, P)";
+  buzzerStatus.textContent = "Buzzers open… (A, L, W, P or phones)";
+
+  // Notify phones
+  if (state.fb.room) {
+    state.fb.openRef.set(true);
+    state.fb.pressesRef.remove(); // clear previous presses
+  }
 }
 
 function lockBuzzers() {
@@ -261,19 +269,11 @@ function lockBuzzers() {
     btnWrong.disabled = false;
   } else {
     buzzerStatus.textContent = "Buzzers locked";
+    if (state.fb.room) state.fb.openRef.set(false);
   }
 }
 
-function onBuzz(teamIndex) {
-  if (!state.buzzersOpen) return;
-  if (!state.teams[teamIndex].active) return;
-  if (state.answeredTeams.has(teamIndex)) return; // already wrong once for this clue
-  if (!state.buzzingOrder.length) {
-    state.buzzingOrder.push(teamIndex);
-    lockBuzzers();
-  }
-}
-
+// Grade
 function grade(isCorrect) {
   const team = state.buzzingOrder[0];
   if (team == null) return;
@@ -281,45 +281,35 @@ function grade(isCorrect) {
   const value = (cell.index === state.dailyDoubleCell) ? Number(ddWager.value||0) : cell.value;
   if (isCorrect) {
     state.teams[team].score += value;
-    state.selectingTeam = team; // gets next pick
+    state.selectingTeam = team;
     finishClue(true);
   } else {
     state.teams[team].score -= value;
     state.answeredTeams.add(team);
-    // allow another team to buzz
     state.buzzersOpen = true;
     btnCorrect.disabled = true;
     btnWrong.disabled = true;
     buzzerStatus.textContent = "Wrong. Others may buzz…";
+    if (state.fb.room) state.fb.openRef.set(true);
   }
   renderScores();
 }
 
-function passBuzz() {
-  // Close without scoring; mark used
-  finishClue(false);
-}
+function passBuzz() { finishClue(false); }
 
 function finishClue(showExplain) {
-  // mark cell used
   const idx = state.currentCell.index;
   state.board[idx].used = true;
-  state.usedCount += 1;
   if (showExplain && state.currentCell.clue.explain) {
     clueExplain.textContent = "Explain: " + state.currentCell.clue.explain;
   }
-  setTimeout(()=>{
-    dialogs.clue.close();
-    renderBoard();
-  }, showExplain ? 900 : 200);
+  if (state.fb.room) state.fb.openRef.set(false);
+  setTimeout(()=>{ dialogs.clue.close(); renderBoard(); }, showExplain ? 900 : 200);
 }
 
-function closeClue() {
-  dialogs.clue.close();
-}
+function closeClue() { dialogs.clue.close(); }
 
 function goToFinal() {
-  // Build wagers UI
   finalCategory.textContent = state.final.category || "Final";
   finalWagers.innerHTML = "";
   state.finalWagers = {};
@@ -328,11 +318,8 @@ function goToFinal() {
     const maxWager = Math.max(Math.abs(t.score), Math.max(...state.values));
     const row = document.createElement("div");
     row.className = "score";
-    row.innerHTML = `
-      <div class="name">${escapeHtml(t.name)} — $${t.score}</div>
-      <div style="margin-top:6px">
-        Wager: <input type="number" id="w${i}" min="0" max="${maxWager}" value="${Math.min(300,maxWager)}" style="width:120px" />
-      </div>`;
+    row.innerHTML = `<div class="name">${escapeHtml(t.name)} — $${t.score}</div>
+      <div style="margin-top:6px">Wager: <input type="number" id="w${i}" min="0" max="${maxWager}" value="${Math.min(300,maxWager)}" style="width:120px" /></div>`;
     finalWagers.appendChild(row);
     state.finalWagers[i] = 0;
   });
@@ -343,7 +330,6 @@ function goToFinal() {
 }
 
 function revealFinal() {
-  // Save wagers and show clue
   Object.keys(state.finalWagers).forEach(k => {
     const i = Number(k);
     const inp = document.getElementById("w"+i);
@@ -351,7 +337,6 @@ function revealFinal() {
   });
   finalClue.textContent = `${state.final.clue}\n\n(Answer: ${state.final.answer})`;
   finalClue.style.display = "block";
-  // Start grading per team
   state.finalIndex = firstActiveTeam();
   if (state.finalIndex == null) return;
   btnFinalCorrect.disabled = false;
@@ -364,8 +349,6 @@ function gradeFinal(isCorrect) {
   const w = state.finalWagers[i] || 0;
   if (isCorrect) state.teams[i].score += w; else state.teams[i].score -= w;
   renderScores();
-
-  // Next active team
   const next = nextActiveTeam(i);
   if (next == null) {
     toast("Final grading complete.");
@@ -378,7 +361,6 @@ function gradeFinal(isCorrect) {
 }
 
 function finishGame() {
-  // Sort results and show table
   const arr = state.teams.filter(t=>t.active).map((t,i)=>({i,...t})).sort((a,b)=>b.score-a.score);
   const rows = arr.map((t,idx)=>`<tr><td>${idx+1}</td><td>${escapeHtml(t.name)}</td><td>$${t.score}</td></tr>`).join("");
   resultsTable.innerHTML = `<table><thead><tr><th>#</th><th>Team</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -386,25 +368,11 @@ function finishGame() {
 }
 
 // Helpers
-function show(name) {
-  Object.values(screens).forEach(s=>s.classList.remove("active"));
-  screens[name].classList.add("active");
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-
-function firstActiveTeam() {
-  for (let i=0;i<state.teams.length;i++) if (state.teams[i].active) return i;
-  return null;
-}
-function nextActiveTeam(cur) {
-  for (let i=cur+1;i<state.teams.length;i++) if (state.teams[i].active) return i;
-  return null;
-}
-function toast(msg) {
-  // minimal inline toast
+function show(name) { Object.values(screens).forEach(s=>s.classList.remove("active")); screens[name].classList.add("active"); }
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function firstActiveTeam(){ for(let i=0;i<state.teams.length;i++) if(state.teams[i].active) return i; return null; }
+function nextActiveTeam(cur){ for(let i=cur+1;i<state.teams.length;i++) if(state.teams[i].active) return i; return null; }
+function toast(msg){
   const el = document.createElement("div");
   el.textContent = msg;
   el.style.position = "fixed"; el.style.bottom = "16px"; el.style.right = "16px";

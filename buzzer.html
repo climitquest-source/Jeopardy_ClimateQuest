@@ -1,0 +1,15 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Climate Quest - Buzzer</title>
+<link rel="icon" href="assets/icon.png"/><link rel="stylesheet" href="styles.css"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head><body class="buzzer-body"><main class="buzzer-main">
+<section class="card"><h2>Join game</h2>
+<div class="row"><label>Room code</label><input id="room" placeholder="e.g., GREEN7"/></div>
+<div class="row"><label>Display name</label><input id="name" placeholder="Your name" maxlength="18"/></div>
+<div class="row"><label>Team</label><select id="team"><option value="0">Team 1</option><option value="1">Team 2</option><option value="2">Team 3</option><option value="3">Team 4</option></select></div>
+<div class="cta"><button id="btn-join" class="primary">Join</button></div><div class="note" id="joinStatus"></div></section>
+<section class="card" id="buzzCard" style="display:none"><h2 id="buzzHeader">Team</h2><div class="big-buzz"><button id="btn-buzz" class="buzz-btn">BUZZ</button></div>
+<div class="note" id="buzzStatus">Waiting for host…</div><div class="cta"><button id="btn-leave" class="ghost">Leave</button></div></section>
+</main><script src="phones-client.js"></script></body></html>
